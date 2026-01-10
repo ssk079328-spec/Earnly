@@ -5,36 +5,30 @@ from telegram.ext import Application, CommandHandler, CallbackQueryHandler, Cont
 from flask import Flask
 from threading import Thread
 
-# --- তথ্য সেটআপ ---
-TOKEN = '8508407996:AAF1e6hcJXR4Gy7I_t6vOxPoE6spDnV2NJY'
-MONETAG_LINK = 'https://prizeblass.com/4/8837344' 
+# --- কনফিগারেশন ---
+TOKEN = '8508407996:AAHt-1hDETJdAsX2TJvGw19GuG0eqnkfSDU'
+MONETAG_LINK = 'https://prizeblass.com/4/8837344'
+# আপনার শিট লিঙ্ক (Apps Script-এর মাধ্যমে ডাটা পাঠানোর জন্য ব্যবহার হবে)
+SHEET_URL = 'https://docs.google.com/spreadsheets/d/1LkqmsHTESG1n2vh_LlgEKol1WWPAXdBCBqmWWibce6M/edit'
 
-# আপনার গুগল শিটের পুরো পাবলিক লিঙ্ক
-SHEET_LINK = 'https://docs.google.com/spreadsheets/d/1LkqmsHTESG1n2vh_LlgEKol1WWPAXdBCBqmWWibce6M/edit?usp=drivesdk'
-
-# --- রেন্ডার ফ্রি টায়ারের জন্য ফ্লাস্ক সার্ভার ---
+# --- রেন্ডারকে জাগিয়ে রাখার সার্ভার ---
 server = Flask('')
 
 @server.route('/')
 def home():
-    return "Bot is Running!"
+    return "Earnly Bot is Online and Running!"
 
 def run():
     port = int(os.environ.get('PORT', 8080))
     server.run(host='0.0.0.0', port=port)
 
-def keep_alive():
-    t = Thread(target=run)
-    t.start()
-
-# --- বটের মূল কাজ ---
+# --- বটের মূল ফাংশন ---
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     name = update.effective_user.first_name
     keyboard = [[InlineKeyboardButton("💰 ইনকাম শুরু করুন", callback_data='earn')]]
-    reply_markup = InlineKeyboardMarkup(keyboard)
     await update.message.reply_text(
-        f"স্বাগতম {name}!\n\nবিজ্ঞাপন দেখে আয় করতে নিচের বাটনে ক্লিক করুন।", 
-        reply_markup=reply_markup
+        f"স্বাগতম {name}!\nবিজ্ঞাপন দেখে আয় করতে নিচের বাটনে ক্লিক করুন।", 
+        reply_markup=InlineKeyboardMarkup(keyboard)
     )
 
 async def earn(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -42,16 +36,18 @@ async def earn(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(query.from_user.id)
     name = query.from_user.first_name
     
-    # ইউজারকে ইনকাম দেওয়া
-    await query.answer("অভিনন্দন! ০.৫০ টাকা রেকর্ড করা হয়েছে।", show_alert=True)
-    await query.message.reply_text(
-        f"আপনার বিজ্ঞাপনটি এখানে দেখুন:\n{MONETAG_LINK}\n\nআবার ইনকাম করতে /start দিন।"
-    )
-    print(f"User {name} ({user_id}) clicked the ad.")
+    # এখানে আমরা ইউজারের ডাটা প্রিন্ট করছি যাতে আপনি রেন্ডার লগে সেটি দেখতে পান
+    print(f"User: {name} (ID: {user_id}) earned 0.50 TK")
+    
+    await query.answer("অভিনন্দন! ০.৫০ টাকা সফলভাবে যোগ হয়েছে।", show_alert=True)
+    await query.message.reply_text(f"আপনার বিজ্ঞাপন লিঙ্ক: {MONETAG_LINK}\nপরের বার ইনকাম করতে আবার /start দিন।")
 
 if __name__ == '__main__':
-    keep_alive() # রেন্ডারকে জাগিয়ে রাখার জন্য
-    print("Bot is starting...")
+    # সার্ভার ব্যাকগ্রাউন্ডে চালু করা
+    Thread(target=run).start()
+    
+    # টেলিগ্রাম বট সেটআপ
+    print("Starting bot...")
     application = Application.builder().token(TOKEN).build()
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CallbackQueryHandler(earn, pattern='earn'))
