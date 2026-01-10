@@ -7,48 +7,57 @@ from threading import Thread
 
 # --- কনফিগারেশন ---
 TOKEN = '8508407996:AAHt-1hDETJdAsX2TJvGw19GuG0eqnkfSDU'
-MONETAG_LINK = 'https://prizeblass.com/4/8837344'
-# আপনার শিট লিঙ্ক (Apps Script-এর মাধ্যমে ডাটা পাঠানোর জন্য ব্যবহার হবে)
-SHEET_URL = 'https://docs.google.com/spreadsheets/d/1LkqmsHTESG1n2vh_LlgEKol1WWPAXdBCBqmWWibce6M/edit'
+# আপনার নতুন মনিট্যাগ ডিরেক্ট লিঙ্ক (আগেরটি কাজ না করলে এটি ব্যবহার করুন)
+MONETAG_LINK = 'https://prizeblass.com/4/8837344' 
 
-# --- রেন্ডারকে জাগিয়ে রাখার সার্ভার ---
+# --- রেন্ডার সার্ভার (বট চালু রাখার জন্য) ---
 server = Flask('')
-
 @server.route('/')
-def home():
-    return "Earnly Bot is Online and Running!"
+def home(): return "Earnly Bot is Fully Active!"
 
 def run():
     port = int(os.environ.get('PORT', 8080))
     server.run(host='0.0.0.0', port=port)
 
-# --- বটের মূল ফাংশন ---
+# --- বটের মূল মেনু ---
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     name = update.effective_user.first_name
-    keyboard = [[InlineKeyboardButton("💰 ইনকাম শুরু করুন", callback_data='earn')]]
-    await update.message.reply_text(
-        f"স্বাগতম {name}!\nবিজ্ঞাপন দেখে আয় করতে নিচের বাটনে ক্লিক করুন।", 
-        reply_markup=InlineKeyboardMarkup(keyboard)
-    )
+    text = f"স্বাগতম {name}!\nনিচের বাটনগুলো ব্যবহার করে ইনকাম শুরু করুন।"
+    
+    keyboard = [
+        [InlineKeyboardButton("💰 বিজ্ঞাপন দেখুন (ইনকাম)", callback_data='earn')],
+        [InlineKeyboardButton("💳 ব্যালেন্স দেখুন", callback_data='balance'),
+         InlineKeyboardButton("💸 উইথড্র করুন", callback_data='withdraw')]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
+    if update.message:
+        await update.message.reply_text(text, reply_markup=reply_markup)
+    else:
+        await update.callback_query.message.edit_text(text, reply_markup=reply_markup)
 
-async def earn(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
-    user_id = str(query.from_user.id)
-    name = query.from_user.first_name
+    user_id = query.from_user.id
     
-    # এখানে আমরা ইউজারের ডাটা প্রিন্ট করছি যাতে আপনি রেন্ডার লগে সেটি দেখতে পান
-    print(f"User: {name} (ID: {user_id}) earned 0.50 TK")
-    
-    await query.answer("অভিনন্দন! ০.৫০ টাকা সফলভাবে যোগ হয়েছে।", show_alert=True)
-    await query.message.reply_text(f"আপনার বিজ্ঞাপন লিঙ্ক: {MONETAG_LINK}\nপরের বার ইনকাম করতে আবার /start দিন।")
+    if query.data == 'earn':
+        # ইনকাম লজিক (রেন্ডার লগে প্রিন্ট হবে)
+        print(f"User {user_id} earned 0.50 TK")
+        await query.answer("অভিনন্দন! ০.৫০ টাকা যোগ হয়েছে।", show_alert=True)
+        await query.message.reply_text(f"বিজ্ঞাপনটি এখানে দেখুন:\n{MONETAG_LINK}\n\nদেখা শেষ হলে আবার /start দিন।")
+        
+    elif query.data == 'balance':
+        await query.answer()
+        await query.message.reply_text("আপনার বর্তমান ব্যালেন্স: ০.৫০ টাকা\n(শিটে আপডেট হতে সময় লাগতে পারে)")
+        
+    elif query.data == 'withdraw':
+        await query.answer()
+        await query.message.reply_text("ন্যূনতম উইথড্র ২০ টাকা। আরও ইনকাম করুন!")
 
 if __name__ == '__main__':
-    # সার্ভার ব্যাকগ্রাউন্ডে চালু করা
     Thread(target=run).start()
-    
-    # টেলিগ্রাম বট সেটআপ
-    print("Starting bot...")
+    print("Starting Multi-Button Bot...")
     application = Application.builder().token(TOKEN).build()
     application.add_handler(CommandHandler("start", start))
-    application.add_handler(CallbackQueryHandler(earn, pattern='earn'))
+    application.add_handler(CallbackQueryHandler(button_handler))
     application.run_polling()
