@@ -6,7 +6,7 @@ from flask import Flask
 from threading import Thread
 
 # --- কনফিগারেশন ---
-TOKEN = '8508407996:AAHt-1hDETJdAsX2TJvGw19GuG0eqnkfSDU'
+TOKEN = '8508407996:AAEvpEs4H7WC77q8go3td1x2gl_QMD_L7DA'
 # আপনার নতুন মনিট্যাগ ডিরেক্ট লিঙ্ক (আগেরটি কাজ না করলে এটি ব্যবহার করুন)
 MONETAG_LINK = 'https://prizeblass.com/4/8837344' 
 
